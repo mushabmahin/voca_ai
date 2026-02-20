@@ -8,9 +8,8 @@ class ClientConfig(BaseModel):
     risk_triggers: List[str]
 
 class AnalyzeRequest(BaseModel):
-    input_type: str  # "text" or "audio"
+    input_type: str
     conversation: Optional[str] = None
-    client_config: ClientConfig
 
 class AnalyzeResponse(BaseModel):
     summary: str

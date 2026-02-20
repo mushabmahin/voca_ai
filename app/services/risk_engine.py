@@ -1,8 +1,33 @@
-def calculate_risk_score(base_score: int, triggers: list, conversation: str):
-    adjusted_score = base_score
+def calculate_risk_assessment(base_score, triggers, conversation, emotion_intensity):
 
+    score = base_score
+    factors = []
+
+    # Emotional intensity weighting
+    if emotion_intensity == "High":
+        score += 20
+        factors.append("High emotional intensity")
+    elif emotion_intensity == "Medium":
+        score += 10
+        factors.append("Moderate emotional intensity")
+
+    # Trigger-based escalation
     for trigger in triggers:
         if trigger.lower() in conversation.lower():
-            adjusted_score += 10
+            score += 15
+            factors.append(f"{trigger} detected")
 
-    return min(adjusted_score, 100)
+    score = min(score, 100)
+
+    if score >= 75:
+        level = "High"
+    elif score >= 40:
+        level = "Medium"
+    else:
+        level = "Low"
+
+    return {
+        "score": score,
+        "level": level,
+        "factors": factors
+    }

@@ -1,33 +1,33 @@
-from fastapi import APIRouter, UploadFile, File, Form
-from app.models.schemas import AnalyzeRequest, AnalyzeResponse
-from app.services.ai_service import analyze_conversation
+from fastapi import APIRouter, Form, UploadFile, File, HTTPException
 from app.services.audio_service import transcribe_audio
-import json
+from app.services.ai_service import analyze_conversation
+from app.models.schemas import AnalyzeRequest
 
 router = APIRouter()
 
 @router.post("/analyze")
 async def analyze(
     input_type: str = Form(...),
-    client_config: str = Form(...),
     conversation: str = Form(None),
     audio_file: UploadFile = File(None)
 ):
-    try:
-        config_dict = json.loads(client_config)
-    except Exception:
-        return {"error": "Invalid client_config JSON format"}
 
     if input_type == "audio":
-        transcription = await transcribe_audio(audio_file)
-        conversation_text = transcription
-    else:
+        if not audio_file:
+            raise HTTPException(status_code=400, detail="Audio file is required")
+        conversation_text = await transcribe_audio(audio_file)
+
+    elif input_type == "text":
+        if not conversation:
+            raise HTTPException(status_code=400, detail="Conversation text is required")
         conversation_text = conversation
+
+    else:
+        raise HTTPException(status_code=400, detail="Invalid input_type")
 
     request_obj = AnalyzeRequest(
         input_type=input_type,
-        conversation=conversation_text,
-        client_config=config_dict
+        conversation=conversation_text
     )
 
     result = await analyze_conversation(request_obj)
