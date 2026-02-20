@@ -1,0 +1,24 @@
+{
+  "industry": "telecom",
+  "compliance_keywords": [
+    "service agreement",
+    "billing cycle",
+    "data usage",
+    "privacy policy",
+    "portability request",
+    "service level agreement",
+    "network coverage"
+  ],
+  "custom_intents": [
+    "service_outage",
+    "billing_dispute",
+    "plan_upgrade",
+    "technical_support",
+    "cancellation_request",
+    "network_issue"
+  ],
+  "risk_threshold": 0.5,
+  "language_codes": ["en", "es"],
+  "summary_length": 100,
+  "enable_timeline_analysis": false
+}
