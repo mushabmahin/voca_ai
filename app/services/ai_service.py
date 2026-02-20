@@ -77,14 +77,14 @@ Conversation:
 {request.conversation}
 """
 
+    messages = [{"role": "user", "content": prompt}]
+
     response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=[
-            {"role": "system", "content": "Return only valid JSON."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.2
-    )
+    model="llama-3.1-8b-instant",
+    messages=messages,
+    temperature=0.1,
+    max_tokens=600
+)
 
     raw_output = response.choices[0].message.content.strip()
 
