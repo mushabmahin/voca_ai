@@ -29,30 +29,78 @@ DOMAIN_RISK_TRIGGERS = {
     "Travel": ["cancellation", "compensation"]
 }
 
+
+def clean_json_response(text: str):
+    text = text.strip()
+
+    if text.startswith("```"):
+        text = text.split("```")[1]
+
+    if text.startswith("json"):
+        text = text[4:]
+
+    return text.strip()
+
+
 async def analyze_conversation(request: AnalyzeRequest):
 
+    # 🔹 Convert structured conversation to readable transcript
+    conversation_text = "\n".join(
+        [f"{msg.speaker.upper()}: {msg.text}" for msg in request.conversation]
+    )
+
+    system_message = """
+You are an enterprise conversation intelligence engine.
+
+CRITICAL RULES:
+- All analytical outputs MUST be in English.
+- Only the 'language' field may contain the original language.
+- If input is not English, internally translate before analysis.
+- Return ONLY valid JSON.
+"""
+
     prompt = f"""
-You are an enterprise-grade conversation intelligence engine.
+IMPORTANT INSTRUCTIONS:
 
-IMPORTANT INSTRUCTIONS (MANDATORY):
-
-1. Detect the business domain of the conversation.
+1. Detect the business domain.
    Possible domains: {SUPPORTED_DOMAINS}
 
-2. Detect the original language and return it in the "language" field.
+2. Detect ALL languages used in the conversation.
+   - If multiple languages are used, return all of them.
+   - The "language" field must be a list of all detected languages.
+   - Example: ["Hindi", "English"]
+   - Even if only a few words from another language are present,
+     include that language in the list.
+   - If English words appear within another language (e.g., Manglish or Hinglish),
+  include BOTH languages.
+   - Example:
+      "Ente account block ayi without reason"
+       → ["Malayalam", "English"]
+      Detect ALL languages used in the conversation.
+    - If Malayalam words written in Latin script are present 
+      (e.g., "ente", "cheyyanam", "koduthu", "ayi"),
+      include "Malayalam" in the language list.
 
-3. If the conversation is NOT in English:
-   - First internally translate the conversation into English.
-   - Then generate the summary and all analysis based on the English translation.
+Do NOT ignore Malayalam if it appears in transliterated form.
 
-4. All output fields MUST be written in English.
-   The ONLY field allowed to contain non-English text is the "language" field.
+3. Provide:
+   - Detailed summary
+   - Sentiment (Positive/Neutral/Negative)
+   - Emotion (Angry, Frustrated, Concerned, Calm, etc.)
+   - Emotion_intensity (Low/Medium/High)
+   - Primary customer intent
+   - Key topics
 
-5. If any field is not in English, regenerate it in English before returning the final JSON.
+4. Analyze the agent behavior:
+   - Professionalism
+   - Resolution effectiveness
 
-6. Provide detailed emotion and emotion_intensity.
+5. Provide conversation outcome.
 
-Return STRICT valid JSON only. No explanation.
+6. Generate risk_assessment with:
+   - score (0–100)
+   - level (Low/Medium/High)
+   - factors (list of reasons)
 
 Required JSON format:
 {{
@@ -64,6 +112,10 @@ Required JSON format:
   "emotion_intensity": "",
   "intents": [],
   "topics": [],
+  "agent_analysis": {{
+    "professionalism": "",
+    "resolution_effectiveness": ""
+  }},
   "compliance_issues": [],
   "risk_assessment": {{
     "score": 0,
@@ -73,56 +125,82 @@ Required JSON format:
   "call_outcome": ""
 }}
 
-Conversation:
-{request.conversation}
+Conversation Transcript:
+{conversation_text}
 """
 
-    messages = [{"role": "user", "content": prompt}]
-
     response = client.chat.completions.create(
-    model="llama-3.1-8b-instant",
-    messages=messages,
-    temperature=0.1,
-    max_tokens=600
-)
+        model="llama-3.1-8b-instant",
+        messages=[
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.1,
+        max_tokens=800
+    )
 
     raw_output = response.choices[0].message.content.strip()
 
     try:
-        parsed_output = json.loads(raw_output)
+        cleaned_output = clean_json_response(raw_output)
+        parsed_output = json.loads(cleaned_output)
 
-        # Safety fallback
-        if "compliance_issues" not in parsed_output:
+        # 🔹 Ensure compliance_issues exists
+        if "compliance_issues" not in parsed_output or not isinstance(parsed_output["compliance_issues"], list):
             parsed_output["compliance_issues"] = []
 
         detected_domain = parsed_output.get("detected_domain", "General")
 
-        # 🔹 Apply internal domain triggers
+        # 🔹 Get domain-specific triggers
         triggers = DOMAIN_RISK_TRIGGERS.get(detected_domain, [])
 
-        # 🔹 Rule-based compliance engine (optional simple rule)
+        # 🔹 Run structured guardrail engine
         rule_violations = rule_based_compliance_check(
-            request.conversation,
-            []  # no external policies now
+            conversation_text,
+            []
         )
+
         parsed_output["compliance_issues"].extend(rule_violations)
 
-        # 🔹 Calculate risk assessment (new format)
-        base_score = parsed_output["risk_assessment"]["score"]
+        # 🔹 Severity-based risk multiplier
+        severity_boost = 0
+        for violation in rule_violations:
+            if violation["severity"] == "High":
+                severity_boost += 20
+            elif violation["severity"] == "Medium":
+                severity_boost += 10
+            elif violation["severity"] == "Low":
+                severity_boost += 5
 
+        # 🔹 Base AI risk score
+        base_score = parsed_output["risk_assessment"].get("score", 0)
+
+        # 🔹 Final explainable risk assessment
         risk_data = calculate_risk_assessment(
-            base_score,
+            base_score + severity_boost,
             triggers,
-            request.conversation,
+            conversation_text,
             parsed_output.get("emotion_intensity", "Low")
         )
 
         parsed_output["risk_assessment"] = risk_data
 
+        # 🔹 Optional: Guardrail summary
+        if rule_violations:
+            parsed_output["guardrail_summary"] = {
+                "total_violations": len(rule_violations),
+                "highest_severity": max(
+                    [v["severity"] for v in rule_violations],
+                    key=lambda x: {"High": 3, "Medium": 2, "Low": 1}.get(x, 0)
+                )
+            }
+
         return parsed_output
 
     except Exception as e:
-        print("ERROR:", e)
+        print("AI Parsing Error:", e)
+        print("Raw Model Output:", raw_output)
+
         return {
             "detected_domain": "Unknown",
             "summary": "Error parsing AI output",
@@ -132,7 +210,17 @@ Conversation:
             "emotion_intensity": "Low",
             "intents": [],
             "topics": [],
-            "compliance_issues": ["Model returned invalid JSON"],
+            "agent_analysis": {
+                "professionalism": "Unknown",
+                "resolution_effectiveness": "Unknown"
+            },
+            "compliance_issues": [
+                {
+                    "type": "System Error",
+                    "severity": "High",
+                    "message": "Model returned invalid JSON"
+                }
+            ],
             "risk_assessment": {
                 "score": 0,
                 "level": "Low",

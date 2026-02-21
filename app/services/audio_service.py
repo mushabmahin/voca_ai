@@ -3,9 +3,9 @@ import tempfile
 import os
 
 model = WhisperModel(
-    "medium",
-    device="cpu",
-    compute_type="int8"
+    "small",
+    device="cuda",          # 🔥 GPU
+    compute_type="float16"  # 🔥 Fast GPU mode
 )
 
 async def transcribe_audio(file):

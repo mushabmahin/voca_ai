@@ -1,33 +1,32 @@
-from fastapi import APIRouter, Form, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Body
 from app.services.audio_service import transcribe_audio
 from app.services.ai_service import analyze_conversation
 from app.models.schemas import AnalyzeRequest
 
 router = APIRouter()
 
-@router.post("/analyze")
-async def analyze(
-    input_type: str = Form(...),
-    conversation: str = Form(None),
-    audio_file: UploadFile = File(None)
-):
+# 🔹 TEXT (2-Way Structured Conversation)
+@router.post("/analyze/text")
+async def analyze_text(request: AnalyzeRequest = Body(...)):
 
-    if input_type == "audio":
-        if not audio_file:
-            raise HTTPException(status_code=400, detail="Audio file is required")
-        conversation_text = await transcribe_audio(audio_file)
+    if request.input_type != "text":
+        raise HTTPException(status_code=400, detail="Invalid input_type for text endpoint")
 
-    elif input_type == "text":
-        if not conversation:
-            raise HTTPException(status_code=400, detail="Conversation text is required")
-        conversation_text = conversation
+    result = await analyze_conversation(request)
+    return result
 
-    else:
-        raise HTTPException(status_code=400, detail="Invalid input_type")
+
+# 🔹 AUDIO (Single file input)
+@router.post("/analyze/audio")
+async def analyze_audio(audio_file: UploadFile = File(...)):
+
+    conversation_text = await transcribe_audio(audio_file)
 
     request_obj = AnalyzeRequest(
-        input_type=input_type,
-        conversation=conversation_text
+        input_type="text",
+        conversation=[
+            {"speaker": "customer", "text": conversation_text}
+        ]
     )
 
     result = await analyze_conversation(request_obj)

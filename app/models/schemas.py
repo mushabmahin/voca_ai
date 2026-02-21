@@ -7,9 +7,14 @@ class ClientConfig(BaseModel):
     policies: List[str]
     risk_triggers: List[str]
 
+class Message(BaseModel):
+    speaker: str  # "agent" or "customer"
+    text: str
+
+
 class AnalyzeRequest(BaseModel):
     input_type: str
-    conversation: Optional[str] = None
+    conversation: List[Message]
 
 class AnalyzeResponse(BaseModel):
     summary: str
