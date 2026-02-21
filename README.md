@@ -16,9 +16,19 @@ analyzes multi-speaker conversations (text or audio) to extract:
 
 ##  Architecture
 
-User Input (Text / Audio) ↓ Speech-to-Text (Whisper GPU) ↓ Conversation
-Structuring ↓ LLM Analysis (Groq LLaMA 3.1) ↓ Guardrail Engine ↓ Risk
-Engine ↓ Structured JSON Output
+User Input (Text / Audio) 
+          ↓ 
+Speech-to-Text (Whisper GPU) 
+          ↓ 
+Conversation Structuring 
+          ↓ 
+LLM Analysis (Groq LLaMA 3.1) 
+          ↓ 
+Guardrail Engine 
+          ↓ 
+Risk Engine
+          ↓ 
+Structured JSON Output
 
 ------------------------------------------------------------------------
 
