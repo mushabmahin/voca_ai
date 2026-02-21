@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List
+
 
 class ClientConfig(BaseModel):
     domain: str
@@ -7,21 +8,22 @@ class ClientConfig(BaseModel):
     policies: List[str]
     risk_triggers: List[str]
 
-class Message(BaseModel):
-    speaker: str  # "agent" or "customer"
-    text: str
-
 
 class AnalyzeRequest(BaseModel):
-    input_type: str
-    conversation: List[Message]
+    text: str
+    client_config: ClientConfig
+
 
 class AnalyzeResponse(BaseModel):
+    detected_domain: str
     summary: str
     language: List[str]
     sentiment: str
+    emotion: str
+    emotion_intensity: str
     intents: List[str]
     topics: List[str]
-    compliance_issues: List[str]
-    risk_score: int
+    agent_analysis: dict
+    compliance_issues: List[dict]
+    risk_assessment: dict
     call_outcome: str
