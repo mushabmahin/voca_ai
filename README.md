@@ -35,10 +35,8 @@ Voca AI is an innovative speech recognition tool designed to enhance user intera
 4. Push to the branch (`git push origin feature/YourFeature`).
 5. Open a Pull Request.
 
-## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Author
 Mushab Mahin  
-Email: mushabmahin@example.com  
+Email: mushabmahin777@gmail.com  
 GitHub: [mushabmahin](https://github.com/mushabmahin)
