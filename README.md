@@ -1,70 +1,68 @@
 # Voca AI – Multimodal Conversation Intelligence Backend
 
 ## 🔍 Overview
-An API-driven backend system that analyzes voice and text conversations to generate structured insights such as summaries, sentiment, intent, and risk signals for enterprise applications.
+An API-driven backend system that processes voice and text conversations using Whisper (speech-to-text) and Grok API (LLM) to generate structured insights such as summaries, sentiment, intent, and risk signals.
 
 ---
 
 ## Problem
-Enterprises (banks, telecom, support centers) handle large volumes of customer conversations across voice and text channels. Manually analyzing these interactions is slow, inconsistent, and fails to scale.
-
-There is a need for an automated system that can extract actionable insights in real time.
+Enterprises handle large volumes of customer conversations across voice and text channels. Manual analysis is inefficient, error-prone, and does not scale.
 
 ---
 
 ## Solution
-Built a multimodal AI backend capable of processing both audio and text inputs and generating structured intelligence outputs.
+Built a multimodal AI backend that converts voice to text using Whisper and analyzes conversations using Grok API to generate actionable insights.
 
 ---
 
 ## Key Features
-- 🎙️ Supports both voice recordings and text transcripts  
-- 🌍 Multilingual language detection  
-- 📊 Sentiment & emotion analysis  
-- 🎯 Customer intent classification  
-- 🧠 Topic & entity extraction  
-- ⚠️ Risk & escalation flag detection  
+- 🎙️ Voice-to-text transcription using Whisper  
+- 🌍 Multilingual processing  
+- 📊 Sentiment & emotion analysis (LLM)  
+- 🎯 Intent detection  
+- 🧠 Entity & topic extraction  
+- ⚠️ Risk / escalation flag detection  
 - 🧾 Structured JSON output for integration  
 
 ---
 
 ## Architecture
-### Backend
-- FastAPI-based REST API  
-- Modular and scalable design  
-- Config-driven rule engine for domain-specific logic  
 
-### AI Pipeline
-- Speech/Text processing  
-- NLP-based analysis (intent, sentiment, entities)  
-- Risk scoring & compliance checks  
+### 1. Input Layer
+- Voice recordings / text input  
+
+### 2. Processing Pipeline
+- Whisper → speech-to-text conversion  
+- Preprocessing & formatting  
+- Grok API → LLM-based analysis  
+
+### 3. Backend System
+- FastAPI REST endpoints  
+- Config-driven rule engine  
+- Response formatting  
 
 ---
 
 ## Output
-Generates structured JSON responses including:
+Structured JSON including:
 - Summary  
-- Sentiment score  
-- Intent classification  
-- Risk / escalation flags  
-- Extracted entities  
+- Sentiment  
+- Intent  
+- Risk flags  
+- Key entities  
 
 ---
 
 ## Tech Stack
 - Python  
 - FastAPI  
-- NLP / AI models  
+- Whisper (Speech-to-Text)  
+- Grok API (LLM)  
 - JSON APIs  
 
 ---
 
-## Demo
-(Add API request/response example here)
-
----
-
 ## Future Improvements
-- Real-time streaming support  
-- Advanced LLM integration  
-- Deployment for enterprise-scale usage  
+- Real-time streaming pipeline  
+- Custom fine-tuned models  
+- Deployment at scale  
